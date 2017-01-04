@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>weather/Config.js - Documentation</title>
+
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="module-tools-Args.html">Args</a><ul class='methods'><li data-type='method'><a href="module-tools-Args.html#get">get</a></li></ul></li><li><a href="module-tools-Error.html">Error</a><ul class='methods'><li data-type='method'><a href="module-tools-Error.html#message">message</a></li><li data-type='method'><a href="module-tools-Error.html#throw">throw</a></li></ul></li><li><a href="module-tools-Help.html">Help</a><ul class='methods'><li data-type='method'><a href="module-tools-Help.html#display">display</a></li></ul></li><li><a href="module-tools-Location.html">Location</a></li><li><a href="module-tools-Weather.html">Weather</a></li><li><a href="module-weather-Output.html">Output</a><ul class='methods'><li data-type='method'><a href="module-weather-Output.html#current">current</a></li><li data-type='method'><a href="module-weather-Output.html#header">header</a></li><li data-type='method'><a href="module-weather-Output.html#icons">icons</a></li><li data-type='method'><a href="module-weather-Output.html#print">print</a></li><li data-type='method'><a href="module-weather-Output.html#warnings">warnings</a></li></ul></li></ul><h3>Modules</h3><ul><li><a href="module-Data.html">Data</a><ul class='methods'><li data-type='method'><a href="module-Data.html#~ip">ip</a></li><li data-type='method'><a href="module-Data.html#~ip_location">ip_location</a></li><li data-type='method'><a href="module-Data.html#~p_location">p_location</a></li><li data-type='method'><a href="module-Data.html#~prettyprint">prettyprint</a></li><li data-type='method'><a href="module-Data.html#~weather">weather</a></li></ul></li><li><a href="module-tools.html">tools</a><ul class='methods'><li data-type='method'><a href="module-tools.html#~apply">apply</a></li><li data-type='method'><a href="module-tools.html#~hotCold">hotCold</a></li><li data-type='method'><a href="module-tools.html#~paramExist">paramExist</a></li><li data-type='method'><a href="module-tools.html#~read">read</a></li><li data-type='method'><a href="module-tools.html#~realTime">realTime</a></li><li data-type='method'><a href="module-tools.html#~status">status</a></li><li data-type='method'><a href="module-tools.html#~tableContent">tableContent</a></li><li data-type='method'><a href="module-tools.html#~write">write</a></li></ul></li><li><a href="module-weather.html">weather</a><ul class='methods'><li data-type='method'><a href="module-weather.html#~config_weather">config_weather</a></li></ul></li></ul><h3>Global</h3><ul><li><a href="global.html#e">e</a></li><li><a href="global.html#weather">weather</a></li></ul>
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">weather/Config.js</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Created by apizzimenti on 1/2/17.
+ */
+
+/**
+ * @module weather
+ */
+
+/**
+ * @author Anthony Pizzimenti
+ *
+ * @desc Organizes and creates the Help object, Args object, checks if help is requested, and starts the chain of callbacks.
+ *
+ * @see Data
+ * @see tools
+ * @see Args
+ * @see write
+ * @see status
+ * @see Help
+ */
+
+function config_weather () {
+    
+    var weather = require("./Data"),
+        tools = require("../tools"),
+        pkg = require("../../package.json"),
+        
+        min = require("minimist")(process.argv.slice(1)),
+        chalk = require("chalk"),
+        
+        help = tools.Help,
+        Args = tools.Args,
+        write = tools.write,
+        read = tools.read,
+        status = tools.status,
+        
+        // creates a new Help object
+        Help = new help(
+            "cli-weather",
+            "Retrieves weather for your current location or an input location.",
+            pkg.version,
+            {
+                "celsius": "-c | --celsius → Change all units to si units (Celsius degrees/meters per second).",
+                "help": "-h | --help → Display this help page.",
+                "address": "-a | --address → Retrieve the weather for the provided location.",
+                "zip": "-z | --zip → Retrieve the weather for the provided zip code.",
+                "verbose": "-v | --verbose → Show status messages while retrieving your weather.",
+                "save": "-s | --save → Save the current options as defaults."
+            }
+        ),
+        
+        args,
+        auto,
+        
+        // reads saved data from config file
+        re = read(__dirname + "/config.json", min);
+    
+    // if the user wants to save the current argstring; otherwise override the saved one
+    if (min.s || min.save) {
+        min.s ? delete min.s : delete min.save;
+        write(__dirname + "/config.json", min);
+    } else {
+        min = Object.assign(re, min);
+    }
+    
+    // create new Args object for easy argstring reference
+    args = new Args(min, {
+        "address": ["a", "address"],
+        "help": ["h", "help"],
+        "celsius": ["c", "celsius"],
+        "zip": ["z", "zip"],
+        "verbose": ["v", "verbose"],
+        "save": ["s", "save"]
+    });
+    
+    // if there's a provided address or zip code, automatically retrieve location
+    auto = !(args.get("address") || args.get("zip"));
+    
+    if (args.get("help")) {
+        Help.display();
+    }
+    
+    if (args.get("verbose")) {
+        console.log();
+        console.log(chalk.bold.underline("cli-weather v" + pkg.version));
+        console.log();
+    }
+    
+    if (auto) {
+        weather.ip(args, weather.ip_location);
+    } else if (!auto) {
+        weather.p_location(args, weather.weather);
+    }
+}
+
+module.exports = {
+    config_weather: config_weather
+};
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Wed Jan 04 2017 02:28:39 GMT-0600 (CST) using the Minami theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+</body>
+</html>

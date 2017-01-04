@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>weather/Data/Location.js - Documentation</title>
+
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="module-tools-Args.html">Args</a><ul class='methods'><li data-type='method'><a href="module-tools-Args.html#get">get</a></li></ul></li><li><a href="module-tools-Error.html">Error</a><ul class='methods'><li data-type='method'><a href="module-tools-Error.html#message">message</a></li><li data-type='method'><a href="module-tools-Error.html#throw">throw</a></li></ul></li><li><a href="module-tools-Help.html">Help</a><ul class='methods'><li data-type='method'><a href="module-tools-Help.html#display">display</a></li></ul></li><li><a href="module-tools-Location.html">Location</a></li><li><a href="module-tools-Weather.html">Weather</a></li><li><a href="module-weather-Output.html">Output</a><ul class='methods'><li data-type='method'><a href="module-weather-Output.html#current">current</a></li><li data-type='method'><a href="module-weather-Output.html#header">header</a></li><li data-type='method'><a href="module-weather-Output.html#icons">icons</a></li><li data-type='method'><a href="module-weather-Output.html#print">print</a></li><li data-type='method'><a href="module-weather-Output.html#warnings">warnings</a></li></ul></li></ul><h3>Modules</h3><ul><li><a href="module-Data.html">Data</a><ul class='methods'><li data-type='method'><a href="module-Data.html#~ip">ip</a></li><li data-type='method'><a href="module-Data.html#~ip_location">ip_location</a></li><li data-type='method'><a href="module-Data.html#~p_location">p_location</a></li><li data-type='method'><a href="module-Data.html#~prettyprint">prettyprint</a></li><li data-type='method'><a href="module-Data.html#~weather">weather</a></li></ul></li><li><a href="module-tools.html">tools</a><ul class='methods'><li data-type='method'><a href="module-tools.html#~apply">apply</a></li><li data-type='method'><a href="module-tools.html#~hotCold">hotCold</a></li><li data-type='method'><a href="module-tools.html#~paramExist">paramExist</a></li><li data-type='method'><a href="module-tools.html#~read">read</a></li><li data-type='method'><a href="module-tools.html#~realTime">realTime</a></li><li data-type='method'><a href="module-tools.html#~status">status</a></li><li data-type='method'><a href="module-tools.html#~tableContent">tableContent</a></li><li data-type='method'><a href="module-tools.html#~write">write</a></li></ul></li><li><a href="module-weather.html">weather</a><ul class='methods'><li data-type='method'><a href="module-weather.html#~config_weather">config_weather</a></li></ul></li></ul><h3>Global</h3><ul><li><a href="global.html#e">e</a></li><li><a href="global.html#weather">weather</a></li></ul>
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">weather/Data/Location.js</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Created by apizzimenti on 1/2/17.
+ */
+
+/**
+ * @module Data
+ */
+
+var r = require("request"),
+    geocoder = require("geocoder"),
+    
+    tools = require("../../tools"),
+    status = tools.status,
+    Error = tools.Error,
+    Location = tools.Location,
+    
+    prettyprint = require("./Prettyprint").prettyprint;
+
+/**
+ * @author Anthony Pizzimenti
+ *
+ * @desc Gets the computer's location based on a public ip address.
+ *
+ * @param args {Args} Args object.
+ * @param ip {string} Public ip address of this computer.
+ * @param callback {function} First parameter is the Args object, the second is the retrieved location. The third is the
+ * prettyprint function.
+ *
+ * @see Args
+ * @see weather
+ * @see prettyprint
+ * @see config_weather
+ */
+
+function ip_location (args, ip, callback) {
+    
+    var msg = "The location service couldn't find where you are by your public ip.",
+        e = new Error(msg),
+        loc = {};
+    
+    r("http://freegeoip.net/json/" + ip, function (err, res, body) {
+        
+        if (err) {
+            
+            if (args.get("verbose")) {
+                status("Couldn't locate wherever you are.", false);
+            }
+            
+            e.throw();
+        }
+        
+        if (args.get("verbose")) {
+            status("Found your location.", true);
+        }
+        
+        loc = new Location(JSON.parse(body));
+        callback(args, loc, prettyprint);
+    });
+}
+
+/**
+ * @author Anthony Pizzimenti
+ *
+ * @desc Gets the geocode location based on the provided address or zip code.
+ *
+ * @param args {Args} Args object.
+ * @param callback {function} In practice, this is the weather function. First parameter is the Args object, second
+ * parameter is regional data that *must* contain the four parameters used in this example for the weather function to be
+ * able to retrieve data. Third is the prettyprint function.
+ *
+ * @see Args
+ * @see weather
+ * @see prettyprint
+ * @see config_weather
+ */
+
+function p_location (args, callback) {
+    
+    var e = new Error(),
+        
+        lat = 0,
+        long = 0,
+        city,
+        state;
+    
+    geocoder.geocode(args.get("address") || args.get("zip"), function (err, data) {
+        
+        if (err) {
+            
+            if (args.get("verbose")) {
+                status("Google geocoding couldn't find the location.", false);
+            }
+            
+            e.message = "The google geocoder service couldn't find a location related to the one provided.";
+            e.throw();
+        }
+        
+        // geocoder will return a request, but the results array will be empty as per the JSON spec.
+        if (data.results[0]) {
+            city = data.results[0].address_components[0].short_name;
+            state = data.results[0].address_components[2].long_name;
+        } else {
+            e.message = "No location parameter was provided.";
+            e.throw();
+        }
+        
+        if (args.get("verbose")) {
+            status("Found your location.", true);
+        }
+        
+        callback(args, {
+            city: city,
+            region_name: state,
+            latitude: data.results[0].geometry.location.lat,
+            longitude: data.results[0].geometry.location.lng
+        }, prettyprint);
+    });
+}
+
+module.exports = {
+    ip_location: ip_location,
+    p_location: p_location
+};
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Wed Jan 04 2017 02:28:39 GMT-0600 (CST) using the Minami theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+</body>
+</html>
